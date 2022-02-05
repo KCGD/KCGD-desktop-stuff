@@ -1,0 +1,31 @@
+{
+  "name": "time",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main_ref.html",
+  "directories": {
+    "lib": "lib"
+  },
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "os": "^0.1.2",
+    "os-utils": "0.0.14",
+    "path": "^0.12.7",
+    "systeminformation": "^5.9.15"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "window": {
+    "transparent": true,
+    "toolbar": false,
+    "frame": false,
+    "resizable": true,
+    "show_in_taskbar": false,
+    "single-instance": false,
+    "as_desktop": true,
+    "position": "center"
+  }
+}
