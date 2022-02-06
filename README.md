@@ -1,6 +1,6 @@
 # Welcome to my humble abode!
 
-This is a code dump for some modifications i made to my desktop. Keep in mind THIS IS A CODE DUMP, it is for the most part an "as is" dump of what I have running. You will almose definatley need to edit it's code to fit your system.
+This is a code dump for some modifications i made to my desktop. Keep in mind THIS IS A CODE DUMP, it is for the most part an "as is" dump of what I have running. You will almost definitely need to edit it's code to fit your system.
 
 By default it is designed to work on Arch Linux with systemd running GNOME 41.3.
 
