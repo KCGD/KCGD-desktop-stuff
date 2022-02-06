@@ -6,7 +6,7 @@ By default it is designed to work on Arch Linux with systemd running GNOME 41.3.
 
 ## Installation
 
-Make sure you have npmm and nodejs installed on your system and accessible from the terminal
+Make sure you have npm and nodejs installed on your system and accessible from the terminal
 
 Arch and arch based:
 ```bash

@@ -95,7 +95,7 @@
             win.blur();
         })
 
-        //cope the desktop background to the cache folder to be loaded in the shutdown screen
+        //copy the desktop background to the cache folder to be loaded in the shutdown screen
         //getBackgroundPath uses a gnome-spesific API, see function for how to reconfigure
         getBackgroundPath((bgPath) => {
             try{
@@ -176,7 +176,7 @@
 
         //button events are here
 
-        //button in sub menu that opens the main power mey
+        //button in sub menu that opens the main power menu
         $("#powerButton").click(function(){
 
             //fade in background and the actual interactive frame
@@ -226,7 +226,7 @@
             require('child_process').exec('systemctl reboot');
         })
 
-        //this one along with suspending, also closes the menu, so when you resume the menu isnt in the way
+        //this one along with suspending, also closes the menu, so when you resume the menu isnt still open
         $("#suspendButton").click(() => {
             $("#pwrCancel").click();
             require('child_process').exec('systemctl suspend');
@@ -302,7 +302,7 @@
 </script>
 
 <!--
-    ⚠️ WARNING ⚠️: THIS RETURNS A STRING, IT IS USED IN THE GUI OUTPUT FOR TIME VALUES WARNING, THE CSS FROM HERE FORWARD IS VERY WEIRD, BRACE YOURSELF
+    ⚠️ WARNING ⚠️: WARNING, THE CSS FROM HERE FORWARD IS VERY WEIRD, BRACE YOURSELF
 -->
 
 <body oncontextmenu="return false;">
