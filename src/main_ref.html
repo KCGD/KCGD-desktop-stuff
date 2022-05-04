@@ -1,13 +1,16 @@
 <!DOCTYPE html>
+<title>
+    Time
+</title>
 
 <link rel="stylesheet" href="./main.css">
 
 <script src="./modules/jquery-3.6.0.min.js"></script>
 <script src="./modules/jquery-ui.min.js"></script>
 
-<script src="./modules/timeUtils.js"></script> <!--import functions for time management-->
-<script src="./modules/sysUtils.js"></script> <!--tools for system stats-->
-<script src="./modules/IFStatStream.js"></script> <!--wrapper for the ifstat command, for measuring network usage-->
+<script src="./modules/timeUtils.js"></script>
+<script src="./modules/sysUtils.js"></script>
+<script src="./modules/IFStatStream.js"></script>
 
 
 <script>
@@ -15,7 +18,7 @@
     const gui = require('nw.gui');
     const win = gui.Window.get();
 
-    //merge nwjs args and node args into the same array
+    //merge argvs
     process.argv = process.argv.concat(gui.App.argv);
 
     const fs = require('fs');
@@ -24,23 +27,9 @@
     const osUtils = require('os-utils');
     const sysinfo = require('systeminformation');
 
-    /*
-        defaultNetworkAdapter: the network adapter you want it to bind to
-        timeUpdateRate: how quickly to update the time
-        statsUpdateRate: how quickly to update system stats (ram and CPU)
-        assumedSpeedCap: what to assume as 100% internet usage (starts low so you can see small amounts of activity)
-        speedStepInterval: how much to increase / decrease the max internet speed, should it go out above the max
-        globalAnimationDuration: how long animations should take
-        windowOffset: how far to the left to place the windoe (ex: if you have 2 1080p monitors, an offset of 1920 would set it to the 2nd monitor)
-        windowHeight and Width: sets the height and width of the window (not needed if you have it set to maximize itself)
-    */
-
     const config = {
-        "defaultNetworkAdapter" : "enp60s0",
-        "timeUpdateRate" : 1000,
-        "statsUpdateRate" : 1000,
-        "assumedSpeedCap" : 2,
-        "speedStepInterval" : 10,
+        "timeUpdateRate" : 5000,
+        "statsUpdateRate" : 2500,
         "globalAnimationDuration" : 300,
         "windowOffset": 0,
         "windowWidth": 1920,
@@ -54,7 +43,8 @@
         //set back to maximize because i dropped the dynamic opacity for DP
         win.maximize()
 
-        //if debug passed, open dev tools and highlight frames
+
+        //if debug passed, open dev tools
         if(process.argv[1] === "--debug"){
             win.showDevTools(0);
 
@@ -74,10 +64,7 @@
         const dateText = $("#dateText");
 
         //stats
-        const cpuUsageText = $("#cpuUsageText");
-        const cpuUsageBar = $("#cpuUsageBar");
-        const ramUsageText = $("#ramUsageText");
-        const ramUsageBar = $("#ramUsageBar");
+
         const processesText = $("#processesText");
         const imageBackdrop = $("#imageBackdrop");
 
@@ -90,13 +77,12 @@
 
         let averageInternetSpeed = 1; //MBs
 
-        //makes the window un-focus itself if it is focused, preventing it from going over other windows
+        //set auto unblur and anti-focus
         win.on('focus', () => {
             win.blur();
         })
 
-        //copy the desktop background to the cache folder to be loaded in the shutdown screen
-        //getBackgroundPath uses a gnome-spesific API, see function for how to reconfigure
+        //get background cache
         getBackgroundPath((bgPath) => {
             try{
                 fs.copyFileSync(bgPath.replace(/%20/g, " "), path.join(process.cwd(), "./src/cache/bg.jpg"));
@@ -111,79 +97,41 @@
             let date = new Date;
             let time = getTime(date);
 
-            timeText.text(`${parseInt(time.h)}:${make2digit(time.m)}`);
-            amtext.text(time.am);
-            dateText.text(`${convertWeekDay(date.getDay())}, ${convertMonth(date.getMonth())} ${date.getDate()}${getSuffix(date.getDate())}`);
+            //new time update on the top bar
+            $("#topBarateTimeText").text(`${parseInt(time.h)}:${make2digit(time.m)}${time.am} / ${convertWeekDay(date.getDay())}, ${convertMonth(date.getMonth())} ${date.getDate()}${getSuffix(date.getDate())}`);
 
         }, config.timeUpdateRate);
 
 
-        //main loop for updating system stats
+
         const statsUpdateLoop = setInterval(() => {
-            
-            //get CPU usage
+            //CPU
             osUtils.cpuUsage((_u) => {
                 let usage = _u * 100;
 
                 //get tempature
                 sysinfo.cpuTemperature((t) => {
-                    cpuUsageText.text(`CPU USAGE: ${usage.toFixed(2)}% - ${avg(t.cores).toFixed(0)}C`);
-                    cpuUsageBar.css({"width":`${usage}%`});
+                    $("#topCpuText").text(`${usage.toFixed(2)}% - ${avg(t.cores).toFixed(0)}C`);
                 })
             })
 
+            //calc ram
+            //MemAvailable:   11454780 kB
+            let freeRam = parseFloat(require('child_process').execSync(`cat /proc/meminfo | grep MemAvailable`).toString().split(" ")[3]) / 1024;
+            let totalRam = os.totalmem() / (1024 * 1024);
+            $("#topRamText").text(`${(((totalRam - freeRam) / totalRam) * 100).toFixed(2)}% - ${((totalRam - freeRam) / 1024).toFixed(2)}G`);
 
-            //get ram, uses the "free" command
-            getRamPercentage((ramUsage) => {
-                ramUsageText.text(`RAM USAGE: ${ramUsage.toFixed(2)}%`);
-                ramUsageBar.css({"width":`${ramUsage}%`});
-            });    
         }, config.statsUpdateRate);
 
 
+        //CLICKS
 
-        //speed is reported in KB/s, convert to MB/s
-        //resets at the rate spesified in config
-        continuousFstat((speeds) => {
-
-            //get the current up / down speed for the given network adapter
-            let up = speeds[config.defaultNetworkAdapter].up * 0.01;
-            let down = speeds[config.defaultNetworkAdapter].down * 0.01;
-
-            //adjust the GUI to the new speed
-            $("#downRateText").text(`Down: ${(down).toFixed(2)}Mbps - ${config.assumedSpeedCap}Mbps`);
-            $("#downRateBar").css({"width": (down/config.assumedSpeedCap) * 100 + "%"});
-
-            $("#upRateText").text(`Up: ${(up).toFixed(2)}Mbps - ${config.assumedSpeedCap}Mbps`);
-            $("#upRateBar").css({"width": (up/config.assumedSpeedCap) * 100 + "%"});
-
-
-            //lessen the assumed speed cap
-            if(down < config.assumedSpeedCap && up < config.assumedSpeedCap){
-                if(config.assumedSpeedCap > config.speedStepInterval){
-                    config.assumedSpeedCap = config.assumedSpeedCap - config.speedStepInterval;
-                }
-            }
-
-            //raise the assumed speed cap
-            if(down > config.assumedSpeedCap || up > config.assumedSpeedCap){
-                config.assumedSpeedCap = config.assumedSpeedCap + config.speedStepInterval;
-            }
-        })
-
-
-
-
-        //button events are here
-
-        //button in sub menu that opens the main power menu
+        //power menu
         $("#powerButton").click(function(){
 
-            //fade in background and the actual interactive frame
             imageBackdrop.fadeIn(config.globalAnimationDuration);
             $("#powerFrame").fadeIn(config.globalAnimationDuration);
 
-            //animate the power buttons fading in (see function for usage)
             powerButtonAnimation(40, 50, 0, 1, 200);
         })
 
@@ -194,19 +142,17 @@
             require('child_process').exec('dm-tool switch-to-greeter');
         })
 
-        //log out button, also DE spesific so please reconfigure this
+        //logOut button
         $("#logoutButton").click(() => {
             require('child_process').exec('gnome-session-quit --force');
         })
 
 
-        //close the power button screen
+        //power screen cancel
         $("#pwrCancel").click(() => {
 
-            //animate the buttons fading out
             powerButtonAnimation(50, 60, 1, 0, 0);
 
-            //fade out the backdrop and frame after 200ms
             setTimeout(function(){
                 imageBackdrop.fadeOut(config.globalAnimationDuration);
                 $("#powerFrame").fadeOut(config.globalAnimationDuration);
@@ -214,9 +160,6 @@
 
         })
 
-        //these functions are for shutting down, rebooting or suspending the system
-        //they are configured for systemd, so please reconfigure for other init systems
-        //ITS IMPORTANT THAT THESE DO NOT REQUIRE ROOT ACCESS, OR ELSE THE WHOLE PROGRAM WILL NEED TO RUN AS ROOT
         $("#shutdownButton").click(() => {
             console.log('shutdown');
             require('child_process').exec('systemctl poweroff');
@@ -226,15 +169,17 @@
             require('child_process').exec('systemctl reboot');
         })
 
-        //this one along with suspending, also closes the menu, so when you resume the menu isnt still open
         $("#suspendButton").click(() => {
             $("#pwrCancel").click();
             require('child_process').exec('systemctl suspend');
         })
+
+
+        //END CLICKS
     }
 
     //power button animation ([height to fade to])
-    //input: height to start from, height to glide to while fading in, opacity to start with, opacity to fade to, delay till the animation starts
+    //input: y percent from, y percent to, opacity from, opacityto, delay before animation starts
     function powerButtonAnimation(from, to, opacityFrom, opacityTo, delay){
         let powerButtonDivs = Array.prototype.slice.call( document.getElementsByClassName('inPowerFrame') ); //get vanilla divs
         let powerButtons = [];
@@ -258,7 +203,7 @@
         }, delay);
     }
 
-    //remove empty values from array
+
     function removeEmpty(array){
         let cleaned = array.filter((val, i, arr) => {
             return val !== "";
@@ -266,7 +211,7 @@
         return cleaned;
     }
 
-    //average an array of numbers
+
     function avg(nums){
         let sum = 0;
         nums.forEach(element => {
@@ -275,9 +220,8 @@
         return sum/nums.length;
     }
 
-    //gets the file path to the current wallpaper
-    //this relies on a gnome API, so please reconfigure if you're on a different DE
-    //the API returns a path like "file:///somewhere/background.png", you may need to adjust how other DE's return the background path
+
+    //WALLPAPER
     function getBackgroundPath(callback){
         let c = require('child_process').exec('gsettings get org.gnome.desktop.background picture-uri');
 
@@ -288,7 +232,7 @@
         })
     }
 
-    //simple recursion function
+    //recursion function
     function recurse(array, fnctn, done){
         if(array.length !== 0){
             fnctn(array[0], () => {
@@ -299,11 +243,10 @@
             done();
         }
     }
+
+
 </script>
 
-<!--
-    ⚠️ WARNING ⚠️: WARNING, THE CSS FROM HERE FORWARD IS VERY WEIRD, BRACE YOURSELF
--->
 
 <body oncontextmenu="return false;">
     <!--image backdrop-->
@@ -328,90 +271,36 @@
         </div>
     </div>
 
-
-    <!--main screen frames-->
-    <div class="frames" id="timeFrame" style="position:absolute; pointer-events: none; left:50%; top:20%; width:675px; height:675px; transform:translate(-50%, -50%)">
-        <!--time inidcator-->
-        <div class="frames" style="position: absolute; transform: translate(-50%, -50%); left:46%; top:45%; font-family: light; font-size: 800%; color:#fff; text-shadow: 0 0 3px #000000, 0 0 0px #000000;" id="time">00:00</div>
-
-        <!--AM/PM indicator-->
-        <div class="frames" style="position: absolute; transform: translate(-50%, -50%); left:65%; top:47%; font-family: light; font-size: 500%; color:#fff; text-shadow: 0 0 3px #000000, 0 0 0px #000000;" id="amtext">AM</div>
-
-        <!--weekday, month, day-->
-        <div class="frames" style="position: absolute; transform: translate(-50%, -50%); left:50%; text-align: center; width:100%; top:56%; font-family: light; font-size: 300%; color:#fff; text-shadow: 0 0 3px #000000, 0 0 0px #000000;" id="dateText">Wednesday, November 25th</div>
-
-    <!--end time frame-->
+    <!--processes-->
+    <div class="frames" style="position: relative; pointer-events: none; display: block; top:0px; left:0; width:460px; height:168px; margin:10px">
+        <div id="processesText" style="visibility: hidden; position: absolute; top:0; left:0; font-family:'Courier New', Courier, monospace; font-size: 100%; color:#fff;"></div>
     </div>
 
-
-    <!--STATS FRAMES-->
-    <!--CPU-->
-    <div class="frames" style="position: relative; pointer-events: none; display: block; top:0; left:0; width:460px; height:42px; margin:10px">
-        <div id="cpuUsageText" style="position: absolute; top:0; left:0; font-family:'Courier New', Courier, monospace; font-size: 140%; color:#fff; font-weight: bold;">CPU USAGE: 0% - 0C</div>
-        <div class="bar" style="position: absolute; height:10px; width:80%; top:28px">
-            <div id="cpuUsageBar" class="barFiller" style="width:30%"></div>
-        </div>
-    </div>
-
-    <!--RAM-->
-    <div class="frames" style="position: relative; pointer-events: none; display: block; top:0px; left:0; width:460px; height:42px; margin:10px">
-        <div id="ramUsageText" style="position: absolute; top:0; left:0; font-family:'Courier New', Courier, monospace; font-size: 140%; color:#fff; font-weight: bold;">RAM USAGE: 0%</div>
-        <div class="bar" style="position: absolute; height:10px; width:80%; top:28px">
-            <div id="ramUsageBar" class="barFiller" style="width:30%"></div>
-        </div>
-    </div>
 
     <!--logout buttons-->
-    <div class="threeGrid frames" style="position: absolute; transform: translate(-50%, 0); left:50%; height:127px; width:430px;">
+    <div class="threeGrid frames" style="position: absolute; transform: translate(-50%, 0); left:50%; height:75px; width:316px;">
         <!--power-->
-        <div id="powerButton" class="gridOne actionButton" style="border-radius: 0px; border-top-left-radius: 10px;">
-            <img src="./icons/pwr.png" alt="power" class="centerImage" style="width:60%; max-width: 600px; max-height: 600px;">
+        <div id="powerButton" class="gridOne actionButton">
+            <img src="./icons/pwr.png" alt="power" class="centerImage" style="width:53%; max-width: 600px; max-height: 600px;">
         </div>
         <div id="lockButton" class="gridTwo actionButton" style="border-radius: 0px;">
-            <img src="./icons/lock.png" alt="logout" class="centerImage" style="width:60%; max-width: 600px; max-height: 600px;">
+            <img src="./icons/lock.png" alt="logout" class="centerImage" style="width:53%; max-width: 600px; max-height: 600px;">
         </div>
-        <div id="logoutButton" class="gridThree actionButton" style="border-radius: 0px; border-top-right-radius: 10px;">
-            <img src="./icons/logout.png" alt="logout" class="centerImage" style="width:60%; max-width: 600px; max-height: 600px;">
+        <div id="logoutButton" class="gridThree actionButton">
+            <img src="./icons/logout.png" alt="logout" class="centerImage" style="width:53%; max-width: 600px; max-height: 600px;">
         </div>
     </div>
 
-    <!--network listing-->
-    <div class="frames" style="position: absolute; float:left; bottom:0; left:0; width:550px; height:510px">
-        <div class="frames" style="visibility: hidden; position: relative; pointer-events: none; display: block; top:0px; float:left; left:0; width:455px; height:367px; margin:10px">
-            <div id="networkText" style="position: absolute; top:0; left:0; font-family:'Courier New', Courier, monospace; font-size: 100%; color:#fff;"></div>
+    <!--TOP BAR-->
+    <div class="topBar frames" id="topBar">
+        <div class="topBarMeasuerementContainer" style="margin-left:20px;">
+            <img class="topBarMeasuerementIcon" src="./icons/cpu.png">
+            <div class="topBarMeasuerementText" id="topCpuText">00%</div>
         </div>
-
-        <!--i had an idea for vertical stat bars but scrapped it, feel free to mess with this if you think those are a good idea.-->
-
-        <!--VERTICAL BARS--> <!--
-        <div class="frames" style="position:relative; float:right; top: 5px; width:40px; height:365px; margin:5px;">
-            <div class="bar" style="position: absolute; height:70%; left:50%; transform: translate(-50%, 0); top:0; width:10px;">
-                <div id="downRateBar_dis" class="barFiller" style="position: absolute; width:100%; bottom:0px; top:auto; height:50%;"></div>
-            </div>
-            <div id="downRateText_dis" class="internetSpeedText">Test Text</div>
+        <div class="topBarMeasuerementContainer">
+            <img class="topBarMeasuerementIcon" src="./icons/ram.png">
+            <div class="topBarMeasuerementText" id="topRamText">00%</div>
         </div>
-
-        <div class="frames" style="position:relative; float:right; top: 5px; width:40px; height:365px; margin:5px;">
-            <div class="bar" style="position: absolute; height:70%; left:50%; transform: translate(-50%, 0); top:0; width:10px;">
-                <div id="upRateBar_dis" class="barFiller" style="position: absolute; width:100%; bottom:0px; top:auto; height:50%;"></div>
-            </div>
-            <div id="upRateText_dis" class="internetSpeedText">Test Text</div>
-        </div>-->
-
-        <!--HORIZONTAL BARS-->
-        <div class="frames" style="position: relative; pointer-events: none; display: block; top:0; float:left; left:5px; width:460px; height:42px; margin:5px">
-            <div id="upRateText" style="position: absolute; top:0; left:0; font-family:'Courier New', Courier, monospace; font-size: 140%; color:#fff; font-weight: bold;">UP:</div>
-            <div class="bar" style="position: absolute; height:10px; width:80%; top:28px">
-                <div id="upRateBar" class="barFiller" style="width:30%"></div>
-            </div>
-        </div>
-
-        <div class="frames" style="position: relative; pointer-events: none; display: block; top:0; float:left; left:5px; width:460px; height:42px; margin:5px">
-            <div id="downRateText" style="position: absolute; top:0; left:0; font-family:'Courier New', Courier, monospace; font-size: 140%; color:#fff; font-weight: bold;">DOWn:</div>
-            <div class="bar" style="position: absolute; height:10px; width:80%; top:28px">
-                <div id="downRateBar" class="barFiller" style="width:30%"></div> 
-            </div>
-        </div>
-        
+        <div class="topBarateTimeText" id="topBarateTimeText">00:00:00 / Wednesday, Mar 10th</div>
     </div>
 </body>

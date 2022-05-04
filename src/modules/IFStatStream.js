@@ -1,4 +1,4 @@
-//continuous parser and output of ifstat command, auto-defines interfaces and outputs constantly via its callback
+//continuous parser and output of ifstat command, auto-defined interfaces and outputs constantly via its callback
 function continuousFstat(update){
     let initial = true;
     let interfaces = [];

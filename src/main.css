@@ -14,17 +14,15 @@ body{
     font-size: 200%;
 }
 
-/*border for all frame divs, invisible by default, but orange when --debug passed*/
 .frames{
     border: 3px solid rgba(255, 166, 0, 0);
 }
 
-/*base for the stat bars, width, height and poition defined per-div*/
+
 .bar{
     background-color: rgba(255, 255, 255, 0.267);
     border-radius: 100px;
 }
-/*the filler for the bar, percent is either width or height depending on how you angle the bar*/
 .barFiller{
     position:absolute;
     max-width: 100%;
@@ -37,21 +35,20 @@ body{
     border-radius: 100px;
 }
 
-/*the pop-up menu at the bottom of the screen, pops up when hovered over*/
+
 .threeGrid{
     /* border: 2px solid #2e2e2e; */
-    background-color: #00000038;
-    border-radius: 10px;
-    border-bottom-right-radius: 0;
-    border-bottom-left-radius: 0;
+    background-color: #222222;
+    border-radius: 100px;
     border-bottom: none;
-    bottom: -104px;
+    bottom: -43px;
     transition: all 0.3s ease;
+    opacity: 0;
 }
 .threeGrid:hover{
-    bottom:0px;
+    bottom:13px;
+    opacity: 1;
 }
-
 
 .actionButton{
     transition: all 0.25s ease;
@@ -60,8 +57,6 @@ body{
 .actionButton:hover{
     background-color: rgba(77, 77, 77, 0.336);
 }
-
-/*grid one through three are the buttons in the popup menu*/
 .gridOne{
     /* grid-column: 1/3;
     grid-row: 1; */
@@ -70,6 +65,8 @@ body{
     top:-3px;
     width:33.7%;
     height:105%;
+    border-top-left-radius: 100px;
+    border-bottom-left-radius: 100px;
 }
 .gridTwo{
     /* grid-column: 2/3;
@@ -90,9 +87,10 @@ body{
     top:-3px;
     width:33.9%;
     height: 105%;
+    border-top-right-radius: 100px;
+    border-bottom-right-radius: 100px;
 }
 
-/*base for a centered image*/
 .centerImage{
     position: absolute;
     left:50%;
@@ -101,7 +99,6 @@ body{
     pointer-events: none;
 }
 
-/*power screen cancel button*/
 .pwrCancel{
     position: absolute; 
     left:50%; 
@@ -131,6 +128,76 @@ body{
     text-orientation:inherit;
 }
 
+.topBar {
+    position: absolute;
+    top:10px;
+    left:50%;
+    transform:translate(-50%, 0);
+    height:34px;
+    width:98%;
+    border-radius: 100px;
+    background-color: #222222;
+}
+.topBarateTimeText {
+    position: absolute;
+    width:100%;
+    left:0;
+    transform: translate(0,-50%);
+    pointer-events: none;
+    font-family:'Courier New', Courier, monospace;
+    font-size: 100%;
+    color:#fff;
+    top:50%;
+    text-align: center;
+}
+.topBarMeasuerementContainer {
+    position: relative;
+    display:inline-block;
+    margin-left:5px;
+    width:200px;
+    top:0%;
+    width:fit-content;
+    height:100%;
+}
+.topBarMeasuerementContainer:after {
+    z-index: -1;
+		content: "";
+		position: absolute;
+		top: 0;
+     left: 0;
+		height: 100%;
+		width: 100%;
+		background-color: inherit;
+     border-right: 1px solid rgba(255, 255, 255, 0.34);
+		-webkit-transform: skewX(-10deg);
+		-moz-transform: skewX(-10deg);
+		-ms-transform: skewX(-10deg);
+		transform: skewX(-10deg);
+  }
+
+.topBarMeasuerementIcon {
+    position: relative;
+    display:inline-block;
+    margin-left:5px;
+    top:50%;
+    transform: translate(0, -50%);
+    max-width: 600px;
+    max-height: 600px;
+    height:70%;
+    pointer-events: none;
+}
+.topBarMeasuerementText {
+    position: relative;
+    margin-left:5px;
+    padding-right:15px;
+    display:inline-block;
+    /* top:50%;
+    transform:translate(0, -50%); */
+    color:#fff;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bolder;
+    font-size: 100%;
+}
 
 /*FONTS*/
 @font-face {

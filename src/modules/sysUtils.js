@@ -1,4 +1,3 @@
-//gets the current ram usage of the system, uses the "free" command, returns number
 function getRamPercentage(callback){
     let c = require('child_process').exec('free');
 
@@ -12,7 +11,31 @@ function getRamPercentage(callback){
             
             var totalmem = parseInt(parsed[1]);
             var freemem = parseInt([parsed[2]]);
-            callback((freemem / totalmem) * 100);
+            callback({'free': freemem, 'total':totalmem});
+            //callback((freemem / totalmem) * 100);
+
+        } catch (e){
+            console.log(e);
+        }
+    })
+}
+
+//continuous free mem
+function streamRamPercentage(time, callback){
+    let c = require('child_process').exec(`watch -n 1 -t -w free`); //`watch -n ${time/1000} -t free`
+
+    c.stdout.on('data', (d) => {
+        try{
+            console.log(d);
+            let free = d.split("\n")[1].split(" ");
+            var parsed = free.filter((value, index, arr) => {
+                return value !== '';
+            })
+            
+            var totalmem = parseInt(parsed[1]);
+            var freemem = parseInt([parsed[2]]);
+            callback({'free': freemem, 'total':totalmem});
+            //callback((freemem / totalmem) * 100);
 
         } catch (e){
             console.log(e);
@@ -21,7 +44,6 @@ function getRamPercentage(callback){
 }
 
 //get network conenctions
-//this was used in a pannel that listed active network connections, scrapped it so this function is unused.
 function getNetConnections(max, callback){
 
     let out = [];

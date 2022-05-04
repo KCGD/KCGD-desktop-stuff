@@ -13,6 +13,9 @@
     "path": "^0.12.7",
     "systeminformation": "^5.9.15"
   },
+  "devDependencies": {
+    "nw-builder": "^3.5.7"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

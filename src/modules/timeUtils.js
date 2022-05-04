@@ -1,9 +1,3 @@
-//gets the current time, formatted as an object
-/**
- * time.h = hours
- * time.m = minutes
- * time.am = am/pm (for 12 hour time)
- */
 function getTime(date) {
     var hours = date.getHours();
     var minutes = date.getMinutes();
@@ -15,7 +9,6 @@ function getTime(date) {
 }
     
 //adds "0" to start of one digit number (returns as string), returns the given number if already 2 digit
-//⚠️ WARNING ⚠️: THIS RETURNS A STRING, IT IS USED IN THE GUI OUTPUT FOR TIME VALUES
 function make2digit(text){
     if(text.length < 2){
         return "0" + String(text);
